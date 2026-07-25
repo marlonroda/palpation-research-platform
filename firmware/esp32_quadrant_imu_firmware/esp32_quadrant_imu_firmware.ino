@@ -1,4 +1,4 @@
-// ====== Quadrant Pad (MCP3008) + IMU on ESP32  ======
+W// ====== Quadrant Pad (MCP3008) + IMU on ESP32  ======
 // - MCP3008 over software SPI
 // - Kalman per quadrant
 // - Force (quadrant) data at ~500 Hz
@@ -32,9 +32,9 @@ SimpleKalmanFilter kBL(2, 2, 0.01f); // CH2
 SimpleKalmanFilter kBR(2, 2, 0.01f); // CH3
 
 // -------- Cadences (in microseconds) --------
-// Target: IMU ~200 Hz, Force/print ~500 Hz
+// Target: IMU ~200 Hz, Force/print ~700 Hz
 const uint32_t IMU_DT_US   = 5000;   // 1/200 s = 5 ms
-const uint32_t FORCE_DT_US = 1429;   // 1/500 s = 2 ms
+const uint32_t FORCE_DT_US = 1429;   // 1/700 s = 1.43 ms
 
 uint32_t nextImuUs   = 0;
 uint32_t nextForceUs = 0;
