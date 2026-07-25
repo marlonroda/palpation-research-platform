@@ -1,4 +1,4 @@
-W// ====== Quadrant Pad (MCP3008) + IMU on ESP32  ======
+// ====== Quadrant Pad (MCP3008) + IMU on ESP32  ======
 // - MCP3008 over software SPI
 // - Kalman per quadrant
 // - Force (quadrant) data at ~500 Hz
