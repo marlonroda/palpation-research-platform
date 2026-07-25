@@ -11,13 +11,6 @@ This project includes supporting CAD models and electronics-board designs hosted
 
 These links provide access to the associated mechanical CAD and electronics-board design files.
 
-## Repository Policy
-
-The Autodesk links are included as external design references. Exported manufacturing files may be added later in dedicated folders such as:
-
-- `hardware/cad/`
-- `hardware/electronics/`
-- `hardware/gerbers/`
-- `hardware/3d-printing/`
+The Autodesk links are included as external design references.
 
 Before manufacturing or fabrication, verify dimensions, component footprints, board revisions, and export settings.
