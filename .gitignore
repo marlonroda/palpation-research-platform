@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Environments
+venv/
+.venv/
+env/
+.env
+
+# Data and logs
+*.npz
+*.npy
+*.csv
+*.mat
+*.xlsx
+*.log
+
+# OS generated files
+.DS_Store
