@@ -13,7 +13,7 @@ This repository provides a complete environment for experimental data capture an
   - [1. MakerBot Motion Control (Python 2)](#1-makerbot-motion-control-python-2)
   - [2. ESP32 Sensor Data Capture (Python 3)](#2-esp32-sensor-data-capture-python-3)
 - [Data Output Policy](#data-output-policy)
-- [Author](#author)
+
 
 ---
 
@@ -120,7 +120,4 @@ No captured experimental data is checked into this repository.
 
 The ESP32 GUI exports time-series sensor data and metadata as NumPy `.npz` files directly to the local execution directory. To prevent accidental commits of large datasets, the `.gitignore` is configured to exclude `*.npz`, `*.npy`, `*.csv`, `*.mat`, and `*.log` files.
 
----
 
-## Author
-**Doga Ozbek**
