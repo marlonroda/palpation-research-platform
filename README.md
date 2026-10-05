@@ -1,12 +1,26 @@
 # Palpation Research Platform
 
-> **A unified software and firmware suite for robotic palpation research.**
+> A software and firmware platform for robotic palpation research.
 
-This repository provides a complete environment for experimental data capture and automated indentation testing. It leverages a **MakerBot Replicator 2X** as a programmable 3-axis positioning stage to perform mechanical indentations, while simultaneously capturing live pressure and kinematic data using an **ESP32-based quadrant sensor and IMU**.
+This repository provides code to control a MakerBot Replicator 2X as an automated positioning stage for indentation tests, and to capture synchronized pressure and motion data using an ESP32 with a quadrant sensor array and IMU.
+
+> [!NOTE]
+> ### Note for Reviewers (Anonymous Submission)
+> This repository is prepared for anonymous peer review. Author names, affiliations, and identifying links have been removed.
+>
+> **Summary of changes since the previous version:**
+> - **Unified to Python 3**: Previously, the MakerBot motion control required Python 2.7 while the ESP32 code ran on Python 3. We replaced the old Python 2 `makerbot_driver` with a small, native Python 3 serial client (`src/makerbot_control/s3g_client.py`), so the entire platform now runs on Python 3 in a single virtual environment.
+> - **Central config file (`config.yaml`)**: Hardware and motion settings (steps per mm, baud rate, soft limits, dwell times) were moved into `config.yaml` at the root of the repo so they can be adjusted without editing code.
+> - **Experiment runner and YAML presets (`experiments/`)**: Added support for saving and loading automated indentation routines via YAML files (e.g. repeated bounces, step sizes, and dwell times).
+> - **Homing detection and emergency stop**: The MakerBot interface now caches its homing state (`home_state.json`) so it doesn't force a re-home after every restart, and includes a stop button to halt steppers and clear pending commands immediately.
+> - **Serial port auto-detection**: The ESP32 GUI now detects available serial ports on launch and includes a refresh button in the interface. Captures are automatically saved with timestamps to the `data/` directory.
+>
+> **Post-acceptance note**: When the paper is accepted, this README will be updated to display only the regular project description and restore author affiliations, removing the submission notes.
 
 ---
 
 ## Table of Contents
+- [Note for Reviewers](#note-for-reviewers-anonymous-submission)
 - [Hardware Requirements](#hardware-requirements)
 - [Repository Structure](#repository-structure)
 - [System Architecture & Installation](#system-architecture--installation)
