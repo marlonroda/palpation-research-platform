@@ -1,7 +1,7 @@
 // ====== Quadrant Pad (MCP3008) + IMU on ESP32  ======
 // - MCP3008 over software SPI
 // - Kalman per quadrant
-// - Force (quadrant) data at ~500 Hz
+// - Force (quadrant) data at ~700 Hz
 // - IMU data updated at ~200 Hz, but reused between force samples
 
 #include <Adafruit_MCP3008.h>

@@ -1,0 +1,4 @@
+# Subsystem requirements: MakerBot Motion Control (Python 3)
+Flask>=3.0,<4.0
+pyserial>=3.5,<4.0
+PyYAML>=6.0,<7.0

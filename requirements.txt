@@ -1,0 +1,6 @@
+# Unified Python 3 requirements for Palpation Research Platform
+Flask>=3.0,<4.0
+pyserial>=3.5,<4.0
+PyYAML>=6.0,<7.0
+numpy>=1.20.0
+matplotlib>=3.5.0

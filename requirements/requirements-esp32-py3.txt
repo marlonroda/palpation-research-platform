@@ -1,3 +1,4 @@
-numpy
-pyserial
-matplotlib
+# Subsystem requirements: ESP32 Sensor Data Capture (Python 3)
+numpy>=1.20.0
+pyserial>=3.5,<4.0
+matplotlib>=3.5.0

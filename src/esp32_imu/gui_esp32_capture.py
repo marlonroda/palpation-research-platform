@@ -9,6 +9,8 @@ Stream format (10 cols):
 TL_est, TR_est, BL_est, BR_est, ax, ay, az, gx, gy, gz
 """
 
+import datetime
+import os
 import threading
 import time
 import sys
@@ -17,12 +19,14 @@ from tkinter import ttk, messagebox
 
 import numpy as np
 import serial
-
+import serial.tools.list_ports
+from pathlib import Path
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (needed for 3D)
+from serial.tools import list_ports
 
 # Quadrant index mapping inside each sample (vals / data row)
 # 0-based indices in the 10-column stream:
@@ -36,10 +40,26 @@ IDX_Q3 = 0  # BL
 IDX_Q4 = 1  # TR
 
 # ================== USER CONFIG ==================
-PORT       = "/dev/tty.usbserial-0001"  # adjust if needed
+# Find initial port: prefer ttyUSB devices for ESP32, fallback to any USB port, then any port
+ports_info = list(list_ports.comports())
+ports = [p.device for p in ports_info]
+usb_ports = [p.device for p in ports_info if p.vid is not None]
+esp_ports = [p.device for p in ports_info if "ttyUSB" in p.device]
+
+if esp_ports:
+    selected_port = esp_ports[0]
+elif usb_ports:
+    selected_port = usb_ports[0]
+elif ports:
+    selected_port = ports[0]
+else:
+    selected_port = os.environ.get("ESP32_GUI_PORT", "/dev/ttyUSB0")
+
+PORT = selected_port
 BAUD       = 921600
 FS         = 700.0                      # Hz (assumed uniform)
-SAVE_FILE  = "esp32_capture.npz"
+_repo_dir   = Path(__file__).resolve().parents[2] if len(Path(__file__).resolve().parents) >= 3 else Path(__file__).resolve().parent
+save_folder = _repo_dir / "data"
 PLOT_UPDATE_MS = 100                    # ms
 
 # Heatmap / CoP / 3D calibration settings
@@ -47,6 +67,11 @@ CALIB_MIN_SEC = 2.0     # no-touch (rest) duration
 CALIB_MAX_SEC = 3.0     # max-press duration after that
 GRID_N        = 40      # heatmap/surface resolution
 # ================================================
+
+def list_available_ports():
+    """Return a sorted list of connected serial port device paths."""
+    return sorted(p.device for p in serial.tools.list_ports.comports())
+
 
 COL_NAMES = np.array([
     "TL_est", "TR_est", "BL_est", "BR_est",
@@ -68,6 +93,8 @@ class ESP32CaptureApp(tk.Tk):
         self.stop_event = threading.Event()
         self.data = []      # list of [10] arrays
         self.n_samples = 0
+        self.capture_start_time = None
+        self.capture_end_time = None
 
         # ----------- calibration state for heatmap/CoP/3D -----------
         self.calib_start_time = None
@@ -101,6 +128,9 @@ class ESP32CaptureApp(tk.Tk):
         # View mode: "line" or "heatmap"
         self.view_mode = tk.StringVar(value="line")
 
+        # Serial port selection
+        self.port_var = tk.StringVar(value=PORT)
+
         # Handles
         self.surface_plot = None
         self.heatmap_cbar = None
@@ -130,6 +160,20 @@ class ESP32CaptureApp(tk.Tk):
 
         self.reset_btn = ttk.Button(frame, text="Reset Data", command=self.reset_data)
         self.reset_btn.pack(side=tk.LEFT, padx=5)
+
+        # Port selection
+        port_frame = ttk.LabelFrame(frame, text="Serial Port")
+        port_frame.pack(side=tk.LEFT, padx=20)
+
+        self.port_combo = ttk.Combobox(
+            port_frame, textvariable=self.port_var, width=22, state="readonly"
+        )
+        self.port_combo.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.refresh_ports_btn = ttk.Button(port_frame, text="Refresh", command=self.refresh_ports)
+        self.refresh_ports_btn.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.refresh_ports()
 
         # Middle: view mode radio buttons
         view_frame = ttk.LabelFrame(frame, text="View")
@@ -261,6 +305,26 @@ class ESP32CaptureApp(tk.Tk):
 
         self.canvas.draw_idle()
 
+    # ---------- PORT SELECTION ----------
+
+    def refresh_ports(self):
+        """Re-scan available serial ports and refresh the dropdown."""
+        ports = list_available_ports()
+        current = self.port_var.get()
+
+        self.port_combo["values"] = ports
+
+        if current in ports:
+            self.port_var.set(current)
+        elif ports:
+            esp_ports = [p for p in ports if "ttyUSB" in p]
+            if esp_ports:
+                self.port_var.set(esp_ports[0])
+            else:
+                self.port_var.set(ports[0])
+        # else: keep whatever was there (e.g. the hardcoded default) so the
+        # user can still see/edit what was configured even if nothing is detected
+
     # ---------- CAPTURE LOGIC ----------
 
     def start_capture(self):
@@ -269,20 +333,29 @@ class ESP32CaptureApp(tk.Tk):
             messagebox.showinfo("Info", "Capture is already running.")
             return
 
+        port = self.port_var.get()
+        if not port:
+            messagebox.showerror("Serial Error", "No serial port selected.")
+            return
+
         self.stop_event.clear()
+        self.capture_start_time = datetime.datetime.now()
+        self.capture_end_time = None
 
         # Open serial
         try:
-            self.ser = serial.Serial(PORT, baudrate=BAUD, timeout=1.0)
+            self.ser = serial.Serial(port, baudrate=BAUD, timeout=1.0)
             self.ser.reset_input_buffer()
         except serial.SerialException as e:
-            messagebox.showerror("Serial Error", f"Could not open {PORT} @ {BAUD} baud:\n{e}")
+            messagebox.showerror("Serial Error", f"Could not open {port} @ {BAUD} baud:\n{e}")
             self.ser = None
             return
 
-        self.status_label.config(text=f"Status: Capturing on {PORT} @ {BAUD}")
+        self.status_label.config(text=f"Status: Capturing on {port} @ {BAUD}")
         self.start_btn.config(state=tk.DISABLED)
         self.stop_btn.config(state=tk.NORMAL)
+        self.port_combo.config(state=tk.DISABLED)
+        self.refresh_ports_btn.config(state=tk.DISABLED)
 
         # Start background thread
         self.capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
@@ -294,6 +367,7 @@ class ESP32CaptureApp(tk.Tk):
             return
 
         self.stop_event.set()
+        self.capture_end_time = datetime.datetime.now()
         self.status_label.config(text="Status: Stopping...")
         self.after(100, self._finish_stop)
 
@@ -302,6 +376,9 @@ class ESP32CaptureApp(tk.Tk):
         if self.capture_thread and self.capture_thread.is_alive():
             self.after(100, self._finish_stop)
             return
+
+        if self.capture_end_time is None:
+            self.capture_end_time = datetime.datetime.now()
 
         if self.ser is not None and self.ser.is_open:
             try:
@@ -312,13 +389,15 @@ class ESP32CaptureApp(tk.Tk):
 
         self.start_btn.config(state=tk.NORMAL)
         self.stop_btn.config(state=tk.DISABLED)
+        self.port_combo.config(state="readonly")
+        self.refresh_ports_btn.config(state=tk.NORMAL)
 
         self.save_data()
         self.status_label.config(text="Status: Idle")
 
     def _capture_loop(self):
         """Background thread: read lines from serial and append to self.data."""
-        print(f"[THREAD] Capture started on {PORT} @ {BAUD}")
+        print(f"[THREAD] Capture started on {self.ser.port} @ {BAUD}")
         while not self.stop_event.is_set():
             try:
                 line_bytes = self.ser.readline()
@@ -391,6 +470,8 @@ class ESP32CaptureApp(tk.Tk):
 
         self.data = []
         self.n_samples = 0
+        self.capture_start_time = None
+        self.capture_end_time = None
 
         # Calibration reset
         self.calib_start_time = None
@@ -452,9 +533,27 @@ class ESP32CaptureApp(tk.Tk):
         try:
             d = np.array(self.data, dtype=float)
             t = np.arange(d.shape[0]) / FS
-            np.savez(SAVE_FILE, t=t, data=d, colNames=COL_NAMES)
-            messagebox.showinfo("Saved", f"Captured {d.shape[0]} samples.\nSaved to {SAVE_FILE}")
-            print(f"Saved {d.shape[0]} samples to {SAVE_FILE}")
+
+            start_dt = self.capture_start_time or datetime.datetime.now()
+            end_dt = self.capture_end_time or datetime.datetime.now()
+
+            date_str = start_dt.strftime("%Y-%m-%d")
+            start_str = start_dt.strftime("%H-%M-%S")
+            end_str = end_dt.strftime("%H-%M-%S")
+
+            save_folder.mkdir(parents=True, exist_ok=True)
+            save_file = save_folder / f"capture_{date_str}_start_{start_str}_end_{end_str}.npz"
+
+            np.savez(
+                save_file,
+                t=t,
+                data=d,
+                colNames=COL_NAMES,
+                startTime=start_dt.isoformat(),
+                endTime=end_dt.isoformat(),
+            )
+            messagebox.showinfo("Saved", f"Captured {d.shape[0]} samples.\nSaved to {save_file.name}")
+            print(f"Saved {d.shape[0]} samples to {save_file}")
         except Exception as e:
             messagebox.showerror("Save Error", f"Could not save data:\n{e}")
 

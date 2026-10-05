@@ -1,8 +1,0 @@
-Flask==1.1.4
-Jinja2<3.0
-Werkzeug<2.0
-itsdangerous<2.0
-click<8.0
-MarkupSafe<2.0
-pyserial
-makerbot_driver

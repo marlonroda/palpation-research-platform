@@ -18,6 +18,9 @@ env/
 *.mat
 *.xlsx
 *.log
+logs/
+data/
+home_state.json
 
 # OS generated files
 .DS_Store

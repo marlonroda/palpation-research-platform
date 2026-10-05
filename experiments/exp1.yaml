@@ -1,0 +1,29 @@
+# Axis to step along for each waypoint: x, y, or z
+axis: "x"
+
+# [mm] Starting X position for the first waypoint
+start_x: 37.0
+
+# [mm] Starting Y position for the first waypoint
+start_y: 31.0
+
+# [mm] Starting Z position for the first waypoint (top of indent)
+start_z: 90.0
+
+# [mm] Distance to move along axis between waypoints (negative scans backwards)
+step: 57.0
+
+# [mm] How far to dip down in Z at each waypoint
+indent: 6.0
+
+# [cycles] Number of down/up indent cycles per waypoint
+cycles: 1
+
+# [repeats] Number of times to repeat the entire go-to-start + all waypoints sequence
+repeats: 10
+
+# [min] Time to wait between repeated runs (in minutes)
+wait_between_runs_min: 0.0
+
+# [s] Dwell time at the bottom and top of each indent cycle
+wait_sec: 2.0

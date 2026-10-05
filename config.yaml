@@ -1,0 +1,35 @@
+# Motion and hardware constants for the MakerBot Replicator 2X control GUI.
+# Copy/edit this file to tune for a different machine; see README.md for
+# guidance on what each value affects.
+
+serial:
+  baud: 115200
+
+# Replicator 2/2X nominal mechanics
+steps_per_mm:
+  xy: 88.8889   # documented Rep2/2X value
+  z: 400.0      # typical Z lead screw
+
+motion:
+  default_feed_dda: 600   # default motion speed (DDA units)
+  dwell_sec: 0.5           # pause after each move (s)
+
+# Waypoint+Indent tuning (UI controls the repeat count)
+indent:
+  dwell_sec: 0.15          # pause between down/up moves
+  waypoint_dwell_sec: 0.30 # pause after reaching each waypoint
+
+# How long to wait after each homing command (seconds)
+homing:
+  wait_x: 6.0
+  wait_y: 6.0
+  wait_z: 6.0
+
+# Safety soft-limits in mm (keep inside the real build volume)
+soft_limits:
+  max_x_mm: 220.0   # real is ~246, we stay a bit inside
+  max_y_mm: 140.0   # real is ~152, we stay inside
+  max_z_mm: 150.0   # arbitrary safe cap; adjust if needed
+
+logging:
+  file: logs/motion_commands.log
